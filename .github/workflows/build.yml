@@ -1,0 +1,65 @@
+name: Build Android Audio Shim
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android NDK
+        run: sdkmanager --install "ndk;27.2.12479018"
+
+      - name: Compile Android native library
+        shell: bash
+        run: |
+          NDK="$ANDROID_HOME/ndk/27.2.12479018"
+          CLANG="$NDK/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android24-clang"
+          mkdir -p build/natives
+          "$CLANG" -shared -fPIC -O2 \
+            -I"$NDK/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include" \
+            -o build/natives/libaudioshim.so \
+            native/audio_bridge.c -ldl -lOpenSLES
+
+      - name: Compile Java classes
+        run: |
+          mkdir -p build/classes
+          javac --release 8 -d build/classes \
+            src/de/maxhenkel/shim/NativeAudio.java \
+            src/de/maxhenkel/shim/NativeAudioOutput.java \
+            src/de/maxhenkel/shim/AndroidTargetDataLine.java \
+            src/de/maxhenkel/shim/AndroidSourceDataLine.java \
+            src/de/maxhenkel/shim/AndroidMixer.java \
+            src/de/maxhenkel/shim/AndroidMixerProvider.java
+
+      - name: Package mod JAR
+        run: |
+          cp -r META-INF build/classes/
+          cp resources/fabric.mod.json build/classes/
+          cp resources/mcmod.info build/classes/
+          mkdir -p build/classes/natives
+          cp build/natives/libaudioshim.so build/classes/natives/
+          jar --create --file build/android-audio-shim.jar -C build/classes .
+
+      - name: Upload JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-audio-shim
+          path: build/android-audio-shim.jar
