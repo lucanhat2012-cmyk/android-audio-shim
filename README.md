@@ -1,60 +1,40 @@
 # Android Audio Shim
 
-Enables [Simple Voice Chat](https://modrinth.com/plugin/simple-voice-chat) to work on Android devices running MojoLauncher or PojavLauncher.
+Experimental Android audio bridge for [Simple Voice Chat](https://modrinth.com/plugin/simple-voice-chat) on MojoLauncher and PojavLauncher.
+
+## Target build
+
+- Minecraft Java Edition **1.21.11**
+- Fabric Loader
+- Java 21 or newer
+- Android 8.0+
+- arm64-v8a device
+
+This build targets Fabric on Minecraft 1.21.11. The native audio library uses AAudio for microphone input and OpenSL ES for speaker output. It does not guarantee that every Android device or launcher exposes the microphone correctly.
 
 ## How it works
 
-Android does not implement the Java Sound API (`javax.sound.sampled`) used by Simple Voice Chat. This mod provides a Java SPI implementation that routes audio through native Android APIs:
+Android does not provide the desktop Java Sound audio devices expected by Simple Voice Chat. This JAR registers a Java Sound MixerProvider and routes microphone and speaker audio through Android's native audio APIs.
 
-- **Microphone** - AAudio (Android 8.0+)
-- **Speaker** - OpenSL ES (stereo, positional audio)
-
-The native library (`libaudioshim.so`) is bundled inside the JAR and extracted automatically on first launch.
-
-## Requirements
-
-- Android 8.0+
-- arm64-v8a architecture
-- MojoLauncher or PojavLauncher
-- Minecraft 1.12.2+
-- Forge or Fabric
+The native library (`libaudioshim.so`) is bundled in the JAR and extracted when the audio provider loads.
 
 ## Installation
 
-1. Add `audio-shim.jar` to your mods folder
-2. Launch Minecraft
-3. Open Simple Voice Chat settings and select the new microphone source
+1. Use a Fabric profile for Minecraft 1.21.11.
+2. Put the JAR in that profile's `mods` folder.
+3. Keep a compatible Simple Voice Chat Fabric mod installed.
+4. Grant MojoLauncher microphone permission in Android settings.
+5. Start Minecraft and check the Simple Voice Chat microphone list.
 
-> The mod will not appear in the mod list - this is expected behavior.
+The shim may not appear as a normal entry in the Mods screen because it registers a Java audio service rather than a typical gameplay entrypoint.
 
-To remove the native library error messages in chat, open `voicechat-client.properties` and set `use_natives=false`.
+## Important limitations
 
-## Building from source
+- This is an experimental compatibility layer, not an official Simple Voice Chat Android port.
+- The bundled native library is built for Android arm64-v8a.
+- A successful build only confirms that the files compile and package; actual microphone and speaker operation must be tested on the device.
+- The microphone may appear as a default Android audio input rather than by the earphones' product name.
 
-### Requirements
+## Building
 
-- [Termux](https://termux.dev) on Android (or any Linux aarch64 environment with clang)
-- OpenJDK 17
-- clang
-- OpenSL ES headers (`pkg install openjdk-17 clang` in Termux)
-
-### Build
-
-```bash
-bash build.sh
-```
-
-Output files:
-- `/sdcard/audio-shim.jar` - the mod JAR
-- `/sdcard/libaudioshim.so` - the native library (also bundled inside the JAR)
-
-### Deploy
-
-```bash
-# Copy JAR to mods folder
-cp /sdcard/audio-shim.jar /path/to/mods/
-```
-
-## Author
-
-GRED?
+The GitHub Actions workflow builds the arm64 Android native library with the Android NDK, compiles the Java classes, packages the Fabric metadata and service provider, and uploads the JAR as an Actions artifact.
