@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "id": "android-audio-shim",
-  "version": "1.0.0",
+  "version": "1.21.11-1.0.1",
   "name": "Android Audio Shim",
-  "description": "Enables Simple Voice Chat on Android (MojoLauncher/PojavLauncher). Forge and Fabric, Minecraft 1.12.2+",
+  "description": "Android audio bridge for Simple Voice Chat on MojoLauncher and PojavLauncher.",
   "authors": ["GRED"],
   "environment": "client",
   "depends": {
-    "minecraft": ">=1.12.2",
-    "java": ">=8"
+    "minecraft": "1.21.11",
+    "java": ">=21"
   }
 }
